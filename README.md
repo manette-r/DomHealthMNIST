@@ -46,7 +46,7 @@ Variable to forecast :
 
 <img src="images/subject_example.png" alt="Subject from original Health MNIST example" width="500"/>
 
-It returns two CSV files, a label, and a data file (column ```data``` contains image as a *(3888,) vector tensor*). The mask file is not created at this point; if needed, it can be automatically created in the second part. 
+It returns two CSV files, a label, and a data file (containing an image in each row). The mask file is not created at this point; if needed, it can be automatically created in the second part. 
 
 ### Downloading MNIST digits 
 ---
