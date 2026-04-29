@@ -137,8 +137,15 @@ def inverted_colour(image):
     img = 255 -img 
     return img 
 
-'''Stretched a digit, it changes its form and its colour intensity.'''
+
 def stretched_digit(image,new_shape, dim_line=3888, rescale = 0.5):
+    '''
+    Stretched a digit, it changes its form and its colour intensity.
+
+    :param image: image in (36x36) or (36x36x3)
+    :param new_shape: tuple with height and width
+    :param dim_line: 1296 or 3888
+    '''
 
     if dim_line == 3888 :
         h, w, c = image.shape
@@ -149,7 +156,7 @@ def stretched_digit(image,new_shape, dim_line=3888, rescale = 0.5):
 
 
     scaled = cv2.resize(image.astype("uint8"), (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-    mini_scaled = scale_digit(scaled, rescale, dim_line = 1296)
+    mini_scaled = scale_digit(scaled, rescale, dim_line)
     result = np.zeros_like(image)
 
     # offsets pour centrer
@@ -343,7 +350,7 @@ def shift_instances(domain_shifters, labels_file, health_MNIST,mask_df, dim_line
 
         for idx in index_rows :
             try : 
-                img_line = actual_domain_instances.loc[idx, 'data']
+                img_line = np.array(actual_domain_instances.loc[idx].to_list())
 
                 if dim_line == 3888:
                     img = img_line.reshape((36, 36, 3))  
@@ -368,14 +375,14 @@ def shift_instances(domain_shifters, labels_file, health_MNIST,mask_df, dim_line
                 elif instruction=='missing':
                     missing_frac = i_value/100
                     img, mask = missing_pixels(img, missing_frac, dim_line)
-                    mask_df.at[idx, 'mask'] = np.reshape(mask.astype(np.uint8), (dim_line,))
+                    mask_df.loc[idx] = np.reshape(mask.astype(np.uint8), (dim_line,))
                 else : 
                     raise Exception('\nDomain shifter instruction ',instruction,' doesnt exist. /!\\')
                 
             #make sure every image pixel has the same type 
             if img.dtype not in [np.uint8, np.uint16]:
                 img = img.astype(np.uint8)  
-            health_MNIST.at[idx, 'data'] = np.reshape(img, (dim_line,))
+            health_MNIST.loc[idx] = np.reshape(img, (dim_line,))
 
             
 # Delete rows with the columns names in their rows 
@@ -426,45 +433,17 @@ def save_data(data_file, label_file, rotated_MNIST, labels, mask_df, mask_path =
         print(rotated_MNIST)
     else : 
         print("Good match rotated_MNIST.shape ",len(rotated_MNIST)," labels ", len(labels))
-    
-    buffer_data = deepcopy(rotated_MNIST['data'])
-    buffer_mask = deepcopy(mask_df['mask'])
-    #save data and mask : in data and mask columns, every list has to be convert to str 
-    for i in range(len(rotated_MNIST['data'])):
-        #data 
-        x = buffer_data.iloc[i]
 
-        if isinstance(x,np.ndarray) : 
-            x = x.tolist()
-        if isinstance(x, list) : 
-            x = str(x)
-        else : 
-            x = []
-
-        buffer_data.iloc[i] = x
-
-        #mask
-        if mask_path != None : 
-            x_mask = buffer_mask.iloc[i]
-
-            if isinstance(x_mask,np.ndarray) : 
-                x_mask = x_mask.tolist()
-            if isinstance(x_mask, list) : 
-                x_mask = str(x_mask)
-            else : 
-                x_mask = []
-
-            buffer_mask.iloc[i] = x_mask
-
-    #data saving 
-    rotated_MNIST['data'] = buffer_data 
+    # #data saving 
     rotated_MNIST.to_csv(data_file,index=False)
 
     #mask saving 
     if mask_path != None : 
-        mask_df['mask'] = buffer_mask
         mask_df.to_csv(mask_path, index=False)
 
+    #we don't keep the file column 
+    if 'file' in labels.columns :
+        labels = labels.drop(columns=['file'])
     # save labels
     labels.to_csv(label_file, index=False)   
 
@@ -513,7 +492,7 @@ def plot_timepoints_per_subject(health_mnist, labels_file, subject, dim_line = 3
     nrows, ncols = 0,0
     for i in range(nb_timepoints):
         # print('ncols=',ncols, ' et nrows=', nrows)
-        img = subject_rows['data'].iloc[i]
+        img = np.array(subject_rows.iloc[i].to_list())
     
         if dim_line == 3888 :
             img = img.reshape((36, 36, 3))
@@ -538,13 +517,9 @@ def plot_domain_examples(path_data, dim_line = 3888):
 
     data_file = pd.read_csv(path_data)
 
-    #delete all rows with columns names instead of data images  
-    data_file = df_delete_rows(data_file,'data')
-    data_file['data'] = data_file['data'].apply(lambda x: strList_to_numberList(x))
-
     #just take one image 
-    data_row = data_file.loc[0]
-    img_line = data_row['data']
+    img_line = np.array(data_file.loc[0].to_list())
+
     if dim_line == 3888:
         img = img_line.reshape((36, 36, 3))
     else : 
@@ -637,25 +612,16 @@ if __name__ == '__main__':
 
     if nb_domains<2: 
         raise Exception('\nDomain shifter has less than 2 domains. /!\\')
-    
-    #delete all rows with columns names instead of data images  
-    data_file = df_delete_rows(data_file,'data')
+
     if len(data_file) != len(labels_file):
         raise Exception('\nLabels and data files don\'t have the same number of rows.')
-
-    #translate str into ndarray of dim_line 
-    data_file['data'] = data_file['data'].apply(lambda x: strList_to_numberList(x))
 
     #load or create mask dataframe 
     if opt['mask_file_name'] != None : 
         mask_df = pd.read_csv(source+'/'+opt['mask_file_name'])
-        mask_df = df_delete_rows(mask_df,'mask')
-        mask_df['mask'] = mask_df['mask'].apply(lambda x: strList_to_numberList(x))
     else : 
-        mask_df = pd.DataFrame()
-        mask_df['label_idx'] = deepcopy(data_file['label_idx'])
         #create an independant mask for every row with an image containing only 1 (observed value) 
-        mask_df['mask'] = [np.ones(1296, dtype=np.uint8) for _ in range(len(mask_df))] 
+        mask_df =pd.DataFrame(np.ones(data_file.shape, dtype=np.uint8))
 
 
     #splitting and add domain column 
