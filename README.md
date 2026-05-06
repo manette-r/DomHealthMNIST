@@ -144,7 +144,7 @@ If you want ```is_various_domain=False```, don't specify it in the command line,
 
 Removing follow-ups/images changes the structure of the longitudinal data, to have patients having a different number of follow-ups and not the same timepoints. 
 
-With the ```--target``` argument, you can apply a general instruction (by default) or one for each dataset/domain by specifying a column name (for example, *domain* or *dataset*).
+With the ```--target``` argument, you can apply a general instruction (by default) or one for each dataset/domain by specifying a column name (for example, *domain* or *dataset*), as shown in the example at the end of this section.
 
 Two instruction ways to remove follow-ups exist, the ```--list_timepoint_to_remove``` argument lets you specify a list of follow-ups you want to remove and the ```--nb_timepoint_to_remove``` argument stores a number of random timepoints you want to remove for each subject. 
 
