@@ -65,9 +65,13 @@ def save_data(data_file, label_file, rotated_MNIST, label_dict):
     # save labels
     df.to_csv(label_file, index=False, header=False)
 
-# Transform an image with grayscale to rgb, every pixel will host a tuple instead of a single value 
-    # - img : ndarray 
+
 def img_to_rgb(img):
+    '''
+    Transform an image with grayscale to rgb, every pixel will host a tuple instead of a single value 
+    
+    :param img: ndarray 
+    '''
     #img is in grayscale 
     if len(img.shape) == 2:
         img = np.stack([img] * 3, axis=-1)

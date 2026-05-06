@@ -13,7 +13,6 @@ import seaborn as sns
 import math
 import ast
 
-#Parsing arguments from a command line
 #For example : domHealth_MNIST_generate.py --source=./result --destination=./result --data_file_name=health_MNIST_data.csv --labels_file_name=health_MNIST_label.csv --domain_shifters=[[],[('scale',0.5)],[('scale',0.7)],[('scale',1.5)]] --is_various_domain=False
 def parse_arguments():
     """
@@ -73,12 +72,15 @@ def split_array(len_array_target, nb_domains):
     return index_split
 
 
-# Spliting data into domains according to instructions given 
-    # - is_various_domain : boolean True if digit instances from one subject can be associated to various domains, False if there is only one domain for a subject
-    # - nb_domains : number of domains we want to split (int)
-    # - labels_file: dictionnary containing all relative informations to digit
-def split_into_domains(is_various_domain,nb_domains, labels_file):
 
+def split_into_domains(is_various_domain,nb_domains, labels_file):
+    '''
+    Spliting data into domains according to instructions given 
+    
+    :param is_various_domain: boolean True if digit instances from one subject can be associated to various domains, False if there is only one domain for a subject
+    :param nb_domains: number of domains we want to split (int)
+    :param labels_file: dictionnary containing all relative informations to digit
+    '''
     labels_file['domain'] = None 
 
     #split by timepoints : it means that one subject can be assigned to various domains 
@@ -133,6 +135,13 @@ def split_into_domains(is_various_domain,nb_domains, labels_file):
     print(labels_file['domain'].value_counts())
 
 def inverted_colour(image): 
+    '''
+    Invert colour of an image 
+
+    :param image: image in 
+
+    :return: inverted image with the same shape 36,36 or 36,36,3
+    '''
     img = image.astype(np.uint8) 
     img = 255 -img 
     return img 
@@ -184,10 +193,14 @@ def stretched_digit(image,new_shape, dim_line=3888, rescale = 0.5):
     return result 
 
 
-# Changing the digit scale but keeping the initial image dimension 
-# image :  ndarray shape x,x,x
-# scale_factor : a float 
+
 def scale_digit(image, scale_factor, dim_line = 3888):
+    '''
+    Changing the digit scale but keeping the initial image dimension 
+
+    :param image:  ndarray shape x,x,x
+    :param scale_factor: a float 
+    '''
     # Get the original dimensions
 
     if dim_line == 3888 :
@@ -221,15 +234,22 @@ def scale_digit(image, scale_factor, dim_line = 3888):
 
     return result
 
-#Change a hexadedcimal colour to a decimal colour 
-    #- hex_colour : str of 6 carac (without #)
+
 def hex_to_decimal_colour(hex_colour):
+    '''
+    Change a hexadedcimal colour to a decimal colour 
+
+    :param hex_colour: str of 6 carac (without #)
+    '''
     return tuple(int(hex_colour[i:i+2], 16) for i in (0, 2, 4))
 
-# Verify if the instructions and their values are in the good format 
-    # - domain_shifters : a list of element, an element is a list of tuple (str, value) the value depends on the instructions 
-def verify_instructions(domain_shifters_str): 
 
+def verify_instructions(domain_shifters_str): 
+    '''
+    Verify if the instructions and their values are in the good format 
+
+    :param domain_shifters: a list of element, an element is a list of tuple (str, value) the value depends on the instructions 
+    '''
     #understand contents str into list 
     #exemple [[], [('scale',0.5), ('colour','FF0000')], [('scale',0.7), ('colour','0D00FF')], [('scale',1.5), ('colour','00FF04')]]
     try : 
@@ -284,9 +304,13 @@ def verify_instructions(domain_shifters_str):
             
     return domain_shifters
 
-#Change image colour by applying a filter 
 def apply_filter(pixels, base_rgb):
+    '''
+    Change image colour by applying a filter 
 
+    :param pixels: image in 36,36 or 36,36,3 shape
+    :param base_rgb: color in hexadecimal 
+    '''
     # Convert pixels to a NumPy array for efficient processing
     pixels = np.array(pixels)
     # Normalize the pixel values to the range [0, 1]
@@ -303,14 +327,17 @@ def apply_filter(pixels, base_rgb):
 
     return filtered_pixels
 
-#Erase some values pixels depending on the given value missing_frac
-#Input : 
-    # - img :image en 36x36 ou 36x36x3
-    # - missing_frac : pourcentage of pixels to erase 
-    # - dim_line : 1296 ou 3888 selon les dimensions de l'image 
-#Return : 
-    # the masked image and its mask 
+
 def missing_pixels(img, missing_frac, dim_line):
+    '''
+    Erase some values pixels depending on the given value missing_frac
+
+    :param img: image en 36x36 ou 36x36x3
+    :param missing_frac: pourcentage of pixels to erase 
+    :param dim_line: 1296 ou 3888 selon les dimensions de l'image 
+
+    :return: the masked image and its mask 
+    '''
 
     if dim_line == 3888 : 
         h, w, c = img.shape
@@ -330,12 +357,16 @@ def missing_pixels(img, missing_frac, dim_line):
 
     return masked_data, mask
 
-# Applied changes according to domain value 
-    #- domain_shifters : list of tuples lists (string, list/value)
-    #- labels_file : dataframe with relative informations for each digit instances as its domain 
-    #- health_MNIST : digit instances (images) on which the shifters are applied 
-    #- mask_df : dataframe with two columns (label_idx and mask) 
+
 def shift_instances(domain_shifters, labels_file, health_MNIST,mask_df, dim_line = 3888):
+    '''
+    Applied changes according to domain value 
+
+    :param domain_shifters: list of tuples lists (string, list/value)
+    :param labels_file: dataframe with relative informations for each digit instances as its domain 
+    :param health_MNIST: digit instances (images) on which the shifters are applied 
+    :param mask_df: dataframe with two columns (label_idx and mask) 
+    '''
 
     #for each domain, there are instructions of how to change data to create different domains 
     for i in range(len(domain_shifters)) : 
@@ -385,10 +416,15 @@ def shift_instances(domain_shifters, labels_file, health_MNIST,mask_df, dim_line
             health_MNIST.loc[idx] = np.reshape(img, (dim_line,))
 
             
-# Delete rows with the columns names in their rows 
-    # - df : dataframe 
-    # - element : column name targeted 
+
 def df_delete_rows(df, element):
+    '''
+    Delete rows with the columns names in their rows 
+
+    :param df: dataframe 
+    :param element: column name targeted 
+    '''
+    
     index_list = []
     if element in df.columns.tolist():
 
@@ -400,10 +436,13 @@ def df_delete_rows(df, element):
         df[element].apply(lambda x : print("data") if element == x else x)
     return df
 
-# Translate a str (list of numbers) into a ndarray 
-    # - s : string 
-def strList_to_numberList(s):
 
+def strList_to_numberList(s):
+    '''
+    Translate a str (list of numbers) into a ndarray 
+
+    :param s: string 
+    '''
     # Delete space and [ ]
     s = s.strip()[1:-1]
 
@@ -422,12 +461,17 @@ def strList_to_numberList(s):
     
     return np.array(result)
 
-# Almost same method as in health_MNIST_v2_generate.py but rotated_MNIST and mask are now a dataframes  
-    # - data_file : path 
-    # - label_file : path 
-    # - rotated_MNIST : dataframe 
-    # - labels : datframe  
+
 def save_data(data_file, label_file, rotated_MNIST, labels, mask_df, mask_path = None):
+    '''
+    Almost same method as in health_MNIST_v2_generate.py but rotated_MNIST and mask are now a dataframes  
+
+    :param data_file: path 
+    :param label_file: path 
+    :param rotated_MNIST: dataframe 
+    :param labels: datframe  
+    '''
+
     if len(rotated_MNIST) != len(labels):
         print("BAD MATCH rotated_MNIST.shape ",len(rotated_MNIST)," labels ", len(labels))
         print(rotated_MNIST)
@@ -449,11 +493,15 @@ def save_data(data_file, label_file, rotated_MNIST, labels, mask_df, mask_path =
 
 
 
-# Plot all the timepoints ordered by the age for a subject 
-    # - health_mnist : dataframe 
-    # - labels_file : dict
-    # - subject : subject_id 
+
 def plot_timepoints_per_subject(health_mnist, labels_file, subject, dim_line = 3888):
+    '''
+    Plot all the timepoints ordered by the age for a subject 
+
+    :param health_mnist: dataframe 
+    :param labels_file: dict
+    :param subject: subject_id 
+    '''
 
     #filter labels and data 
     subject_rows = labels_file[labels_file['subject']==subject]
@@ -511,9 +559,13 @@ def plot_timepoints_per_subject(health_mnist, labels_file, subject, dim_line = 3
     
     plt.show()
 
-#Plot a line of images with a different changement 
-    # - path_data : path of the data file made from health_MNIST_v2_generate.py
+
 def plot_domain_examples(path_data, dim_line = 3888):
+    '''
+    Plot a line of images with a different changement 
+
+    :param path_data: path of the data file made from health_MNIST_v2_generate.py
+    '''
 
     data_file = pd.read_csv(path_data)
 
@@ -559,14 +611,17 @@ def plot_domain_examples(path_data, dim_line = 3888):
 
     plt.show()
 
-# Separate the global dataset into small ones, if is_various_domain=False dataset will be split by domain values, else is it randomly split 
-    # - col_name : name of the column to distinguish datasets
-    # - labels_file : dataframe 
-    # - is_various_domain = boolean given in the args command 
-    # - nb_datasets : number of smaller datasets we will create 
-    # - seed : seed for random method 
-def dataset_separation(col_name, labels_file, is_various_domain, nb_datasets, seed = 42):
 
+def dataset_separation(col_name, labels_file, is_various_domain, nb_datasets, seed = 42):
+    '''
+    Separate the global dataset into small ones, if is_various_domain=False dataset will be split by domain values, else is it randomly split 
+    
+    :param col_name: name of the column to distinguish datasets
+    :param labels_file: dataframe 
+    :param is_various_domain: boolean given in the args command 
+    :param nb_datasets: number of smaller datasets we will create 
+    :param seed: seed for random method 
+    '''
     if is_various_domain : 
 
         #verify if col_name already exists 
