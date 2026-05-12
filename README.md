@@ -75,10 +75,10 @@ The argument ```--dim_image``` indicates the dimension of the data processed, i.
 
 *This step must be completed before the domain shift.*
 
-Different trajectories result from this event. 
-A patient's disease progression (i.e., digit rotation) can be halted or slowed. 
+A patient's disease progression (e.g., digit rotation) can differ from a timepoint where the synthetic medical intervention occurs. From this point, the rotation can be halted or slowed, simulating either total recovery or slowed disease progression due to the intervention. 
+The arguments  ```nb_halted``` and ```nb_slow``` each contain the number of patients who received a medical intervention.
 
-The patient's condition can be improved by going back in time with an ulterior rotation. This results in an improvement, but not the disappearance, of the disease. 
+<img src="images/medical_intervention.png" alt="Examples of patients disease progression with medical intervention" width="500"/>
 
 
 ### Splitting the dataset into domains 
