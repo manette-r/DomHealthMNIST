@@ -39,7 +39,7 @@ def parse_arguments():
                         help='Name of the column containing timepoint/date')
     parser.add_argument('--list_timepoint_to_remove', type=str, default='[]',
                         help='If target is \'all\' then it is a list of integers corresponding to the position of timepoints you want to remove. Else it is a list of multiple list of timepoint to remove depending on the dataset')
-    parser.add_argument('--nb_timepoint_to_remove', type=int, default=0, 
+    parser.add_argument('--nb_timepoint_to_remove', type=float, default=0, 
                         help='Number of timepoints to remove randomly in a patient\'s longitudinal data.')
     parser.add_argument('--seed', type=int, default=None, 
                         help='Number of seed to use in numpy random method.')
