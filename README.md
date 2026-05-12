@@ -25,10 +25,10 @@ DomHealth MNIST allows easier manipulation of domains with multiple proposed tra
 
 
 
-## 1. Original Health MNIST 
+## 1. A variation of Health MNIST with colours and medical interventions
 ---
 
-We need to create the original Health MNIST from *Ramchandran, S., Tikhonov, G., Kujanpää, K., Koskinen, M., & Lähdesmäki, H. (2021). Longitudinal Variational Autoencoder. Proceedings of the Twenty Fourth International Conference on Artificial Intelligence and Statistics (AISTATS)*. Original Health MNIST includes longitudinal data with 20 timepoints/follow-ups per subject. 
+We made a variation of the Health MNIST from *Ramchandran, S., Tikhonov, G., Kujanpää, K., Koskinen, M., & Lähdesmäki, H. (2021). Longitudinal Variational Autoencoder. Proceedings of the Twenty Fourth International Conference on Artificial Intelligence and Statistics (AISTATS)*. Original Health MNIST includes longitudinal data with 20 timepoints/follow-ups per subject. 
 
 Each MNIST digit is a subject; variations in MNIST digits create a series of 20 images. 
 
@@ -53,32 +53,31 @@ It returns two CSV files, a label, and a data file (containing an image in each 
 
 - Download MNIST images with *(36x36)* dimension and unzip archive from [here](https://www.dropbox.com/s/j80vfwcqqu3vmnf/trainingSet.tar?dl=0)
 
+
+### Synthetic medical intervention
+---
+
+A patient's disease progression (e.g., digit rotation) can differ from a timepoint where the synthetic medical intervention occurs. From this point, the rotation can be halted or slowed, simulating either total recovery or slowed disease progression due to the intervention. 
+
+The arguments  ```nb_halted``` and ```nb_slow``` each contain the number of patients who received a medical intervention.
+
+<img src="images/medical_intervention.png" alt="Examples of patients disease progression with medical intervention" width="500"/>
+
 ### Generating experiment data
 ---
 
-- Comparing to the original Health MNIST, we followed their creation guidelines except for some details. Our result dataset doesn't have missing pixels; this step will be possible during the domain splitting. Moreover, you can choose the image dimensions between *(36x36)* or *(36x36x3)*. We are now able to process colour variations because we add three 3 channels.
+- Comparing to the original Health MNIST, we followed their creation guidelines except for some details. Our result dataset doesn't have missing pixels; this step will be possible during the domain splitting. Moreover, you can choose the image dimensions between *(36x36)* or *(36x36x3)*. We are now able to process colour variations because we add three 3 channels, and Medical intervention is included in the code. 
 
 - Before you, make sure that the result folder exists. 
 
 - To create the dataset, run (it is a slightly different version of the original Python file):
-```python health_MNIST_v2_generate.py --source=./trainingSet --destination=./result --num_3=10 --num_6=10 --data_file_name=health_MNIST_data.csv --labels_file_name=health_MNIST_label.csv --dim_image=1296```
+```python health_MNIST_v2_generate.py --source=./trainingSet --destination=./result --num_3=10 --num_6=10 --data_file_name=health_MNIST_data.csv --labels_file_name=health_MNIST_label.csv --dim_image=1296 --nb_halted=2 --nb_slow=3```
 
 ```num_3``` and ```num_6``` can go to 1 normally up to 4137 (depending on the number of digits in the trainingSet folder). 
 
 The argument ```--dim_image``` indicates the dimension of the data processed, i.e., image as a line (1296 or 3888).
 
 ## 2. Irregularity and domain shift to create DomHealth-MNIST
-
-
-### Synthetic medical intervention
----
-
-*This step must be completed before the domain shift.*
-
-A patient's disease progression (e.g., digit rotation) can differ from a timepoint where the synthetic medical intervention occurs. From this point, the rotation can be halted or slowed, simulating either total recovery or slowed disease progression due to the intervention. 
-The arguments  ```nb_halted``` and ```nb_slow``` each contain the number of patients who received a medical intervention.
-
-<img src="images/medical_intervention.png" alt="Examples of patients disease progression with medical intervention" width="500"/>
 
 
 ### Splitting the dataset into domains 
