@@ -23,7 +23,15 @@ DomHealth MNIST allows easier manipulation of domains with multiple proposed tra
 - stretching digit
 - inverting colour
 
+## 0. How to launch it?
+---
 
+You can either launch one file (```domHealth_MNIST.py```) to automatically create the DomHealth MNIST dataset, or follow all the next steps. 
+
+If you choose the one-file version : 
+- Personalise the config file ```domHealthMNIST_config.txt``` (all the arguments are the same as in the next steps).
+- Make sure that the result folder exists. 
+- Run ```python domHealth_MNIST.py --f=domHealthMNIST_config.txt```.
 
 ## 1. A variation of Health MNIST with colours and medical interventions
 ---
@@ -68,10 +76,10 @@ The arguments  ```nb_halted``` and ```nb_slow``` each contain the number of pati
 
 - Comparing to the original Health MNIST, we followed their creation guidelines except for some details. Our result dataset doesn't have missing pixels; this step will be possible during the domain splitting. Moreover, you can choose the image dimensions between *(36x36)* or *(36x36x3)*. We are now able to process colour variations because we add three 3 channels, and Medical intervention is included in the code. 
 
-- Before you, make sure that the result folder exists. 
+- Make sure that the result folder exists. 
 
 - To create the dataset, run (it is a slightly different version of the original Python file):
-```python health_MNIST_v2_generate.py --source=./trainingSet --destination=./result --num_3=10 --num_6=10 --data_file_name=health_MNIST_data.csv --labels_file_name=health_MNIST_label.csv --dim_image=1296 --nb_halted=2 --nb_slow=3```
+```python health_MNIST_v2_generate.py --source_MNIST=./trainingSet --destination=./result --num_3=10 --num_6=10 --data_file_name=health_MNIST_data.csv --labels_file_name=health_MNIST_label.csv --dim_image=1296 --nb_halted=2 --nb_slow=3```
 
 ```num_3``` and ```num_6``` can go to 1 normally up to 4137 (depending on the number of digits in the trainingSet folder). 
 
