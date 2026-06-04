@@ -21,7 +21,7 @@ def parse_arguments():
     """
 
     parser = argparse.ArgumentParser(description='Enter configuration for generating data')
-    parser.add_argument('--source', type=str, default='./trainingSet', help='Path to MNIST image root directory')
+    parser.add_argument('--source_MNIST', type=str, default='./trainingSet', help='Path to MNIST image root directory')
     parser.add_argument('--destination', type=str, default='./data', help='Path to save the generated dataset')
     parser.add_argument('--num_3', type=int, default=50, help='Number of unique instances for digit 3')
     parser.add_argument('--num_6', type=int, default=50, help='Number of unique instances for digit 6')
@@ -32,8 +32,8 @@ def parse_arguments():
     parser.add_argument('--dim_image', type=int, default=3888, help='Number of pixels in an image')
     parser.add_argument('--nb_halted', type=int, default=0, help='Number of patient intervention with halted result')
     parser.add_argument('--nb_slow', type=int, default=0, help='Number of patient intervention with slow result')
-    parser.add_argument('--nb_back', type=int, default=0, help='Number of patient intervention with going back result')
-    parser.add_argument('--after_b_intervention', type=str, default='H', help='Trajectory of the patient after a going back intervention, H=Halted, S=Slow, D=Disease')
+    # parser.add_argument('--nb_back', type=int, default=0, help='Number of patient intervention with going back result')
+    # parser.add_argument('--after_b_intervention', type=str, default='H', help='Trajectory of the patient after a going back intervention, H=Halted, S=Slow, D=Disease')
 
 
     return vars(parser.parse_args())
@@ -53,7 +53,20 @@ def write_label_file_header(label_file, intervention=False):
     df.to_csv(label_file, index=False)
 
 def save_data(data_file, label_file, rotated_MNIST, label_dict, intervention = False):
+    """
+    Method to save data and label files as csv.  
 
+    :param data_file: path of data file 
+    :type data_file: string 
+    :param label_file: path of label file 
+    :type label_file: string
+    :param rotated_MNIST: data 
+    :type rotated_MNIST: dataframe
+    :param label_dict: label
+    :type label_dict: dictionnary
+    :param intervention: if intervention happens set it to True to have the column in label, defaults to False
+    :type intervention: bool, optional
+    """
     # save rotated MNIST
     if os.path.exists(data_file) : 
         df_past = pd.read_csv(data_file)
@@ -90,14 +103,13 @@ def img_to_rgb(img):
 
     return img 
 
-if __name__ == '__main__':
-    opt = parse_arguments()
-    for key in opt.keys():
-        print('{:s}: {:s}'.format(key, str(opt[key])))
-    locals().update(opt)
+def main(opt): 
+    """
+    Main method to create a variation of health MNIST with medical intervention.
 
-
-
+    :param opt: parsed arguments
+    :type opt: dictionnary
+    """
     digit_mod = {'3': opt['num_3'], '6': opt['num_6']}
     sick_prob = 0.5  # probability of instance being sick
     sample_index = 0
@@ -109,7 +121,7 @@ if __name__ == '__main__':
     #verify that intervention numbers are coherents
     halted_patient = opt['nb_halted']
     slow_patient = opt['nb_slow']
-    going_back_patient = opt['nb_back']
+    # going_back_patient = opt['nb_back']
     tt_intervention = halted_patient+slow_patient#+going_back_patient not available for now
     if tt_intervention > sick_prob*(opt['num_3']+opt['num_6']) :
         raise print('The amount of medical intervention ('+str(tt_intervention)+') is over than the number of patients having a disease.')
@@ -118,10 +130,10 @@ if __name__ == '__main__':
     np.random.shuffle(list_interventions)
     idx_intervention = 0
 
-    # Trajectory after Going back intervention 
-    traj_back = opt['after_b_intervention'].upper()
-    if not (traj_back == 'H' or traj_back == 'S' or traj_back == 'D') : 
-        raise print('Please enter a correct trajectory type for going back intervention : H, S or D')
+    # # Trajectory after Going back intervention 
+    # traj_back = opt['after_b_intervention'].upper()
+    # if not (traj_back == 'H' or traj_back == 'S' or traj_back == 'D') : 
+    #     raise print('Please enter a correct trajectory type for going back intervention : H, S or D')
     
     # 20 time points
     time_age = np.arange(0, 20)
@@ -141,12 +153,11 @@ if __name__ == '__main__':
         print("Creating instances of digit {}".format(digit))
 
         # read in the files
-        data_path = os.path.join(opt['source'], digit)
+        data_path = os.path.join(opt['source_MNIST'], digit)
         files = glob.glob('{}/*.jpg'.format(data_path))
 
         # Assume requested files less than total available!
         for i in range(digit_mod[digit]):
-
             original_image = plt.imread(files[i])
             original_image_pad = np.pad(original_image, ((4, 4), (4, 4)), 'constant')
 
@@ -249,3 +260,11 @@ if __name__ == '__main__':
         label_dict = {}
 
     print('Saved! Number of samples: {}'.format(sample_index))
+
+if __name__ == '__main__':
+    opt = parse_arguments()
+    for key in opt.keys():
+        print('{:s}: {:s}'.format(key, str(opt[key])))
+    locals().update(opt)
+
+    main(opt)

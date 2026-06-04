@@ -39,8 +39,8 @@ def parse_arguments():
                         help='Name of the column containing timepoint/date')
     parser.add_argument('--list_timepoint_to_remove', type=str, default='[]',
                         help='If target is \'all\' then it is a list of integers corresponding to the position of timepoints you want to remove. Else it is a list of multiple list of timepoint to remove depending on the dataset')
-    parser.add_argument('--nb_timepoint_to_remove', type=float, default=0, 
-                        help='Number of timepoints to remove randomly in a patient\'s longitudinal data.')
+    parser.add_argument('--nb_timepoint_to_remove', type=str, default='[0]', 
+                        help='List of number of timepoints to remove randomly in a patient\'s longitudinal data.')
     parser.add_argument('--seed', type=int, default=None, 
                         help='Number of seed to use in numpy random method.')
     return vars(parser.parse_args())
@@ -65,7 +65,8 @@ def remove_timepoint(data_f, label_f, mask_f, cols, list_id = [], list_tp = [], 
     '''
 
     if list_id == [] and list_tp == [] and nb_id_removing == 0 and nb_tp_removing == 0 :
-        raise Exception('\nNo change is asked in the parameters of remove_timepoint method.')
+        print('\nNo change is asked in the parameters of remove_timepoint method.')
+        return data_f, label_f, mask_f
     
     #selection of ids 
     target_ids = select_ids(deepcopy(label_f[cols[0]].unique()), list_id, nb_id_removing, seed)
@@ -106,7 +107,7 @@ def get_filtered_rows(data_targets, label_targets, mask_targets, target_id, cols
     :param data_targets: dataframe
     :param label_targets: dataframe, must have columns cols 
     :param mask_targets: dataframes 
-    :param cols: list of string (column name)
+    :param cols: list of string for column names we need [id,date] 
     :param list_tp: list of integers (index timepoint we must remove sorted by importance)
     :param nb_tp_removing: number of timepoint to remove randomly, if < 1 we consider it is a pourcentage of element to remove, if it is >= 1 we consider it is the number of element to remove 
     :param seed: seed to shuffle np.random method
@@ -154,7 +155,7 @@ def get_filtered_rows(data_targets, label_targets, mask_targets, target_id, cols
         
         #we remove randomly 
         else : 
-            tp_list = rows_label_target[opt['col_time']].to_numpy()
+            tp_list = rows_label_target[cols[1]].to_numpy()
             np.random.seed(seed)
             np.random.shuffle(tp_list)
 
@@ -173,7 +174,7 @@ def get_filtered_rows(data_targets, label_targets, mask_targets, target_id, cols
             #remove timepoints randomly 
             tp_list_to_remove = tp_list[:nb_tp_removing_buffer]
 
-            boolean_to_keep = ~rows_label_target[opt['col_time']].isin(tp_list_to_remove)
+            boolean_to_keep = ~rows_label_target[cols[1]].isin(tp_list_to_remove)
             rows_label_target = rows_label_target[boolean_to_keep]
             rows_data_target = rows_data_target[boolean_to_keep]
             rows_mask_target = rows_mask_target[boolean_to_keep]
@@ -232,25 +233,33 @@ def select_ids(all_id, list_element, nb_element_removing, seed):
         return all_id[:nb_ids]
     
 
-def verify_list_tp_remove(list_tp_remove_str):
+def verify_list(idx_list_tp_remove_str, number_list_tp_remove_str):
     '''
-    Verify if the timepoints list to remove is in the good format
+    Verify if the timepoints lists to remove are in the good format
     '''
     try : 
-        list_tp_remove = ast.literal_eval(list_tp_remove_str)
+        idx_list_tp_remove = ast.literal_eval(idx_list_tp_remove_str)
+
     except Exception as e :
-        raise Exception("Problem of str translation for timepoints list to remove args", e)
-    
-    return list_tp_remove
+        raise Exception("Problem of str translation for timepoints list to remove args (list_timepoint_to_remove)", e)
+    if not isinstance(idx_list_tp_remove, list) : 
+        raise Exception('Argument list_timepoint_to_remove is not a list.')
+    try : 
+        nb_list_tp_remove = ast.literal_eval(number_list_tp_remove_str)
+    except Exception as e :
+        raise Exception("Problem of str translation for timepoints list to remove args (nb_timepoint_to_remove)", e)
+    if not isinstance(nb_list_tp_remove, list) : 
+        raise Exception('Argument nb_timepoint_to_remove is not a list.')
+    return idx_list_tp_remove, nb_list_tp_remove
 
 
+def main(opt):
+    """
+    Main method.
 
-if __name__ == '__main__':
-    opt = parse_arguments()
-    for key in opt.keys():
-        print('{:s}: {:s}'.format(key, str(opt[key])))
-    locals().update(opt)
-
+    :param opt: parsed arguments
+    :type opt: dictionnary
+    """
     source = opt['source']
     data_file_name = opt['data_file_name']
     labels_file_name = opt['labels_file_name']
@@ -276,12 +285,17 @@ if __name__ == '__main__':
     cols_id_time = [opt['col_id'], opt['col_time']]
 
     #transform str list into a list type 
-    list_tp_remove = verify_list_tp_remove(opt['list_timepoint_to_remove'])
+    idx_list_tp_remove, nb_list_tp_remove = verify_list(opt['list_timepoint_to_remove'], opt['nb_timepoint_to_remove'])
+
+    # either choose idx_list_tp_remove or nb_list_tp_remove but not both 
+    if len(idx_list_tp_remove) != 0 and len(nb_list_tp_remove) != 0:
+        if len(nb_list_tp_remove) == 1 and nb_list_tp_remove[0] != 0 :
+            raise Exception('Choose between list_timepoint_to_remove or nb_timepoint_to_remove.')
 
     #if removing is apply on all the dataset 
     if col_target == 'all' : 
-        
-        final_label, final_data, final_mask = remove_timepoint(data_file, labels_file,mask_file, cols_id_time, list_tp = list_tp_remove, nb_tp_removing=opt['nb_timepoint_to_remove'], seed=opt['seed'])
+        #we only give the first element of nb_list_tp_remove
+        final_label, final_data, final_mask = remove_timepoint(data_file, labels_file,mask_file, cols_id_time, list_tp = idx_list_tp_remove, nb_tp_removing=nb_list_tp_remove[0], seed=opt['seed'])
 
     #if removing is apply by using a specific column in the dataset
     else : 
@@ -291,17 +305,28 @@ if __name__ == '__main__':
         targets_list = labels_file[col_target].unique()
 
         datasets_result_label, datasets_result_data, datasets_result_mask = [], [], []
+
+        #Verify if we have the good amount of tp_remove 
+        nb_targets = len(targets_list)
+        if idx_list_tp_remove != [] and len(idx_list_tp_remove) < nb_targets :
+            raise Exception('Not enought values, '+str(nb_targets)+' targets but only '+str(len(idx_list_tp_remove))+' for list_timepoint_to_remove.')
+        elif idx_list_tp_remove == [] and  len(nb_list_tp_remove) < nb_targets : 
+            raise Exception('Not enought values, '+str(nb_targets)+' targets but only '+str(len(nb_list_tp_remove))+' for nb_timepoint_to_remove.')
+        
         #Process one target (=patient) at a time 
-        for i in range(len(targets_list)) : 
+        for i in range(nb_targets) : 
 
             target = targets_list[i]
             dataset_label = deepcopy(labels_file[labels_file[col_target] == target])
             dataset_data = deepcopy(data_file.loc[dataset_label.index])  
             dataset_mask = deepcopy(mask_file.loc[dataset_label.index]) 
 
-            print("\nFor target ", target, " with list_tp_remove : ",str(list_tp_remove[i]), ', it will impact ',len(dataset_data),' rows.')     
+            # print("\nFor target ", target, " with list_tp_remove : ",str(idx_list_tp_remove[i]), ', it will impact ',len(dataset_data),' rows.')     
+            if idx_list_tp_remove != [] :
+                result_label, result_data, result_mask = remove_timepoint(dataset_data, dataset_label, dataset_mask, cols_id_time, list_tp = idx_list_tp_remove[i], seed=opt['seed'])
+            else : 
+                result_label, result_data, result_mask = remove_timepoint(dataset_data, dataset_label, dataset_mask, cols_id_time, nb_tp_removing=nb_list_tp_remove[i], seed=opt['seed'])
 
-            result_label, result_data, result_mask = remove_timepoint(dataset_data, dataset_label, dataset_mask, cols_id_time, list_tp = list_tp_remove[i], nb_tp_removing=opt['nb_timepoint_to_remove'], seed=opt['seed'])
             datasets_result_label.append(result_label)
             datasets_result_data.append(result_data)
             datasets_result_mask.append(result_mask)
@@ -316,3 +341,12 @@ if __name__ == '__main__':
         final_mask = final_mask.reset_index(drop=True)
 
     h_MNIST_domain.save_data(source+'/'+opt['data_file_name_result'], source+'/'+opt['labels_file_name_result'], deepcopy(final_data), deepcopy(final_label), deepcopy(final_mask), source+'/'+opt['mask_file_name_result'])
+
+
+if __name__ == '__main__':
+    opt = parse_arguments()
+    for key in opt.keys():
+        print('{:s}: {:s}'.format(key, str(opt[key])))
+    locals().update(opt)
+
+    main(opt)

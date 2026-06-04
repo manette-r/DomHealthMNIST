@@ -46,10 +46,21 @@ def parse_arguments():
     parser.add_argument('--nb_dataset_separation', type=int, default=3,
                         help='If is_various_domain=False dataset will be split by number of total domain values, else is it randomly split in your number choice')
     parser.add_argument('--dim_image', type=int, default=3888, help='Number of pixels in an image')
+    
     return vars(parser.parse_args())
 
 
 def split_array(len_array_target, nb_domains):
+    """
+    Divide a length array depending on domain total numbers.  
+
+    :param len_array_target: Length of the target array
+    :type len_array_target: int
+    :param nb_domains: Total number of domains 
+    :type nb_domains: int 
+    :return: List of tuples containing index (first index, last index) for each domain 
+    :rtype: List of tuples of two integers 
+    """
 
     #have the same number for each domain 
     len_domain = int(len_array_target/nb_domains)
@@ -85,18 +96,6 @@ def split_into_domains(is_various_domain,nb_domains, labels_file):
 
     #split by timepoints : it means that one subject can be assigned to various domains 
     if is_various_domain : 
-        #Shuffle timepoint with a copy of subject and disease_time
-        # buffer_labels = deepcopy(labels_file[['subject','disease_time']]) 
-        # buffer_labels = buffer_labels.sample(frac=1).reset_index(drop=True)
-
-        # domains_split = np.array_split(buffer_labels, nb_domains)
-        # for i,d in enumerate(domains_split) : 
-        #     for _,row in d.iterrows() : 
-        #         subject = row['subject']
-        #         disease_time = row['disease_time']
-        #         #find the exact timepoint 
-        #         conditions = (labels_file['subject'] == subject) & (labels_file['disease_time'] == disease_time)
-        #         labels_file.loc[conditions, 'domain'] = i
         
         index_split = split_array(len(labels_file), nb_domains)
         index_list = labels_file.index.tolist()
@@ -115,11 +114,6 @@ def split_into_domains(is_various_domain,nb_domains, labels_file):
         np.random.seed(42)  
         buffer_subjects = labels_file['subject'].unique()
         np.random.shuffle(buffer_subjects)
-
-        # domains_split = np.array_split(buffer_subjects, nb_domains)
-        # for i,d in enumerate(domains_split) :
-            
-        #     labels_file.loc[labels_file['subject'].isin(d),'domain'] = i
         
         index_split = split_array(len(buffer_subjects), nb_domains)
        
@@ -643,13 +637,13 @@ def dataset_separation(col_name, labels_file, is_various_domain, nb_datasets, se
         for dom_exists in domains_existent : 
             labels_file.loc[labels_file['domain'] == dom_exists,col_name] = dom_exists
 
+def main(opt):
+    """
+    Main method.
 
-if __name__ == '__main__':
-    opt = parse_arguments()
-    for key in opt.keys():
-        print('{:s}: {:s}'.format(key, str(opt[key])))
-    locals().update(opt)
-
+    :param opt: parsed arguments
+    :type opt: dictionnary
+    """
     #verify instructions 
     domain_shifters = verify_instructions(opt['domain_shifters'])
 
@@ -699,5 +693,16 @@ if __name__ == '__main__':
     path_mask = str(opt['destination'])+'\\'+opt['mask_file_name_result']
 
     save_data(path_data, path_labels, deepcopy(data_file), deepcopy(labels_file), deepcopy(mask_df), path_mask)
+
+
+
+
+if __name__ == '__main__':
+    opt = parse_arguments()
+    for key in opt.keys():
+        print('{:s}: {:s}'.format(key, str(opt[key])))
+    locals().update(opt)
+
+    main(opt)
 
 

@@ -1,0 +1,12 @@
+--source_MNIST=./synthetic_dataset/trainingSet
+--destination=./synthetic_dataset/result_test_manon
+--num_3=50
+--num_6=50
+--base_file_name=firstTest
+--dim_image=1296
+--nb_halted=10
+--domain_shifters=[[('missing',25)],[('missing',25),('stretched',[150,40])],[('missing',25),('inverted',0)],[('missing',25),('scale',1.3)]]
+--name_dataset_separation=domain
+--target=domain
+--nb_timepoint_to_remove=[0,2,5,1]
+--change_long_structure=True
